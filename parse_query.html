@@ -69,7 +69,7 @@
 
 <body>
     <div class="left">
-        <textarea id="urlInput" placeholder="請輸入網址..." oninput="handleURLInput()"></textarea>
+        <textarea id="urlInput" oninput="handleURLInput()">https://download-dev.5gg.win/S5G-H5-99958/?access_token=eyJpdiI6ImhBVWJCQ3c0OThqSEgrTjZxTXl6Q2c9PSIsInZhbHVlIjoiNDV1ZnZYMW1zQkIrUVVpbVlYQ1p4QT09IiwibWFjIjoiOWE3NzUzMjhiODNjMGIxODIxMjBmYjQyNTZmZDA3Nzg0ZTVlYzc4ODNiNzRhYjc3ODY3MDU1MTRhMzNkMmZkNyJ9(*--)05f088a7b174de448fb9c31fd4bd4df3&lang=sch&ccy=None&sm=000&subid=0&fullscr=1&lc=zh-CN&pm=0&ns=1&origin=https%3a%2f%2fapi-dev.5gg.win&uid=OkbHRQHncwV0r8DL9xhG8Q%3d%3d&anal=&lb=1&stf=0&showver=1&ngf=1&cp=null</textarea>
     </div>
 
     <div class="right" id="paramContainer">
@@ -132,6 +132,8 @@
             item.appendChild(btn);
             return item;
         }
+
+        handleURLInput();
     </script>
 </body>
 
