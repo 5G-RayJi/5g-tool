@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    貼上spine.json內容, 取得所有動畫名稱
+    <div>
+        <textarea type="text" id="input" onchange="test(this.value)" style="height: 500px;width: 500px"></textarea>
+        <textarea type="text" id="output" style="height: 500px;width: 500px;"></textarea>
+        <textarea type="text" id="enumOutput" style="height: 500px;width: 500px;"></textarea>
+    </div>
+    <script>
+        document.getElementById("input").value = "";
+
+        function test(str) {
+            output.value = "";
+            let json = JSON.parse(str);
+            let animationList = [];
+            for (let key in json.animations) {
+                animationList.push(key);
+            }
+            output.value = animationList.join("\n");
+
+            enumOutput.value = animationList.map((item, index) => `${item} = "${item}",`).join("\n");
+        }
+    </script>
+</body>
+
+</html>

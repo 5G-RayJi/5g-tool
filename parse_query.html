@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>網址 Query 解析器</title>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        .left,
+        .right {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .left {
+            border-right: 1px solid #ccc;
+        }
+
+        .left textarea {
+            width: 100%;
+            height: 100%;
+            font-size: 14px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .right {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .param-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .param-item .name {
+            width: 30%;
+            font-weight: bold;
+            overflow-wrap: break-word;
+        }
+
+        .param-item .value {
+            flex: 1;
+            background: #f1f1f1;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        .param-item button {
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="left">
+        <textarea id="urlInput" placeholder="請輸入網址..." oninput="handleURLInput()"></textarea>
+    </div>
+
+    <div class="right" id="paramContainer">
+        <!-- 動態產生的參數元件會放這裡 -->
+    </div>
+
+    <script>
+        function handleURLInput() {
+            const input = document.getElementById('urlInput').value.trim();
+            const container = document.getElementById('paramContainer');
+            container.innerHTML = ''; // 清空
+
+            try {
+                const url = new URL(input);
+                const params = new URLSearchParams(url.search);
+
+                if (![...params].length) {
+                    container.innerHTML = '<p>此網址沒有 query 參數。</p>';
+                    return;
+                }
+
+                for (const [key, value] of params) {
+                    let item = generateItem(key, value);
+                    container.appendChild(item);
+
+                    if (key === "access_token") {
+                        let operator_id = value.split("(*--)")[1];
+                        item = generateItem("operator_id", operator_id);
+                        container.appendChild(item);
+                    }
+                }
+            } catch (e) {
+                container.innerHTML = '<p>請輸入有效的網址。</p>';
+            }
+        }
+
+        function generateItem(key, value) {
+            const item = document.createElement('div');
+            item.className = 'param-item';
+
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.textContent = key;
+
+            const val = document.createElement('div');
+            val.className = 'value';
+            val.textContent = value;
+
+            const btn = document.createElement('button');
+            btn.textContent = '複製';
+            btn.onclick = () => {
+                navigator.clipboard.writeText(value).then(() => {
+                    btn.textContent = '已複製';
+                    setTimeout(() => btn.textContent = '複製', 1000);
+                });
+            };
+
+            item.appendChild(name);
+            item.appendChild(val);
+            item.appendChild(btn);
+            return item;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        欄:
+        <input type="text" id="input1" onchange="maxColumns = this.value">
+        列:
+        <input type="text" id="input2" onchange="maxRows = this.value">
+        <button onclick="test(JSON.parse(document.getElementById('input').value))">格式化</button>
+    </div>
+
+    資料:
+    <div>
+        <textarea type="text" id="input" style="height: 500px;width: 500px"></textarea>
+        <textarea type="text" id="output" style="height: 500px;width: 500px;"></textarea>
+    </div>
+    <script>
+        var maxColumns = 6;
+        var maxRows = 6;
+        document.getElementById("input1").value = maxColumns;
+        document.getElementById("input2").value = maxRows;
+        document.getElementById("input").value = "[6,6,9,9,9,7,6,8,4,1,7,8,9,2,4,9,1,8,9,9,5,1,1,8,9,7,5,5,9,2,255,255,255,255,255,255]";
+
+        function test(obj) {
+            let str = JSON.stringify(obj);
+            str = str.replaceAll(/,"/g, ',\n"');
+            str = str.replaceAll("{", "{\n");
+            str = str.replaceAll("[", "[\n");
+            let lines = str.split('\n');
+            let result = "";
+            let regexArray = /\d+(,\d+){8,}\]/g
+            let regex = new RegExp(`\\d+(,\\d+){${maxColumns},}\\]`, 'g');
+            lines.forEach((line) => {
+                if (regexArray.test(line) == true) {
+                    var arrayStr = line.match(regexArray)[0]
+                    let arrayStrCopy = arrayStr;
+                    let count = 0;
+                    for (var pos = 0; pos < arrayStrCopy.length; pos++) {
+                        if (arrayStrCopy.charAt(pos) == ",") {
+                            count++;
+                        }
+                        if (count == maxColumns) {
+                            count = 0;
+                            arrayStrCopy = arrayStrCopy.slice(0, pos) + ",\n" + arrayStrCopy.slice(pos + 1);
+                        }
+                    }
+                    line = line.replace(arrayStr, arrayStrCopy);
+                }
+                result += line + "\n";
+            });
+            console.log(result);
+            document.getElementById("output").value = result;
+            return result;
+        }
+    </script>
+</body>
+
+</html>
