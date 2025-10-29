@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Pattern Viewer</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .left-panel {
+            width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .right-panel {
+            flex: 1;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .json-input {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .column-input {
+            width: 60px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .error-message {
+            color: #f44336;
+            background-color: #ffebee;
+            padding: 8px;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            display: none;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h1>JSON Pattern Viewer</h1>
+            
+            <div class="input-group">
+                <label for="jsonInput">JSON 字串:</label>
+                <input type="text" id="jsonInput" class="json-input" placeholder="請貼上您的 JSON 字串...">
+            </div>
+            
+            <div class="input-group">
+                <label for="columnCount">每列數字個數:</label>
+                <input type="number" id="columnCount" class="column-input" value="6" min="1" max="20">
+            </div>
+            
+            <button onclick="parseAndDisplay()">解析並顯示</button>
+            <button onclick="clearAll()">清除</button>
+            
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+        
+        <div class="right-panel">
+            <div id="tableContainer" style="display: none;">
+                <table id="patternTable">
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function parseAndDisplay() {
+            const jsonInput = document.getElementById('jsonInput').value.trim();
+            const columnCount = parseInt(document.getElementById('columnCount').value);
+            const errorMessage = document.getElementById('errorMessage');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            // 清除之前的錯誤訊息
+            errorMessage.style.display = 'none';
+            tableContainer.style.display = 'none';
+            
+            if (!jsonInput) {
+                showError('請輸入 JSON 字串');
+                return;
+            }
+            
+            if (!columnCount || columnCount < 1) {
+                showError('請輸入有效的每列數字個數');
+                return;
+            }
+            
+            try {
+                const jsonData = JSON.parse(jsonInput);
+                
+                if (!jsonData.result || !Array.isArray(jsonData.result.full_symbol_pattern)) {
+                    showError('JSON 中找不到 full_symbol_pattern 陣列');
+                    return;
+                }
+                
+                const pattern = jsonData.result.full_symbol_pattern;
+                displayPattern(pattern, columnCount);
+                
+            } catch (error) {
+                showError('JSON 格式錯誤: ' + error.message);
+            }
+        }
+        
+        function displayPattern(pattern, columnCount) {
+            const tableContainer = document.getElementById('tableContainer');
+            const tableBody = document.getElementById('tableBody');
+            
+            const totalNumbers = pattern.length;
+            const totalRows = Math.ceil(totalNumbers / columnCount);
+            
+            // 生成表格內容
+            tableBody.innerHTML = '';
+            for (let row = 0; row < totalRows; row++) {
+                const tr = document.createElement('tr');
+                for (let col = 0; col < columnCount; col++) {
+                    const td = document.createElement('td');
+                    const index = row * columnCount + col;
+                    if (index < totalNumbers) {
+                        td.textContent = pattern[index];
+                        // 第一列設為藍色背景
+                        if (row === 0) {
+                            td.style.backgroundColor = '#2196F3';
+                            td.style.color = 'white';
+                        }
+                    } else {
+                        td.textContent = '';
+                    }
+                    tr.appendChild(td);
+                }
+                tableBody.appendChild(tr);
+            }
+            
+            tableContainer.style.display = 'block';
+        }
+        
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        function clearAll() {
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('columnCount').value = '6';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('tableContainer').style.display = 'none';
+        }
+        
+        // 載入範例資料
+        window.onload = function() {
+            const exampleJson = '{"msgid":"eResultRecall","status_code":"kSuccess","result":{"module_id":"BS","credit":"0","rng":[6,10,85,168,115,13,94],"strip_index":0,"external_multiplier":1,"full_symbol_pattern":[200,13,12,6,11,200,30,11,2,13,5,4,4,100,100,100,14,4,4,100,100,3,11,14,4,13,100,100,100,14,14,13,30,100,100,14]},"player_cent":"1099960","next_module":"BS","cur_module_play_times":1,"cur_module_total_times":1}';
+            document.getElementById('jsonInput').value = exampleJson;
+        };
+    </script>
+</body>
+</html>
