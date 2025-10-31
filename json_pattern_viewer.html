@@ -33,6 +33,22 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .table-wrapper {
+            margin-bottom: 30px;
+        }
+        
+        .table-wrapper:last-child {
+            margin-bottom: 0;
+        }
+        
+        .table-title {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
         }
         
         h1 {
@@ -145,11 +161,7 @@
         </div>
         
         <div class="right-panel">
-            <div id="tableContainer" style="display: none;">
-                <table id="patternTable">
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
+            <div id="tablesContainer"></div>
         </div>
     </div>
 
@@ -158,11 +170,11 @@
             const jsonInput = document.getElementById('jsonInput').value.trim();
             const columnCount = parseInt(document.getElementById('columnCount').value);
             const errorMessage = document.getElementById('errorMessage');
-            const tableContainer = document.getElementById('tableContainer');
+            const tablesContainer = document.getElementById('tablesContainer');
             
-            // 清除之前的錯誤訊息
+            // 清除之前的錯誤訊息和表格
             errorMessage.style.display = 'none';
-            tableContainer.style.display = 'none';
+            tablesContainer.innerHTML = '';
             
             if (!jsonInput) {
                 showError('請輸入 JSON 字串');
@@ -182,23 +194,45 @@
                     return;
                 }
                 
+                // 顯示第一個表格：full_symbol_pattern
                 const pattern = jsonData.result.full_symbol_pattern;
-                displayPattern(pattern, columnCount);
+                displayPattern('full_symbol_pattern', pattern, columnCount);
+
+                // 顯示後續表格：total_star_times
+                if (jsonData.result.total_star_times && Array.isArray(jsonData.result.total_star_times)) {
+                    jsonData.result.total_star_times.forEach((item, index) => {
+                        if (item.times && Array.isArray(item.times)) {
+                            displayPattern(`total_star_times[${index}]`, item.times, columnCount);
+                        }
+                    });
+                }
                 
             } catch (error) {
                 showError('JSON 格式錯誤: ' + error.message);
             }
         }
         
-        function displayPattern(pattern, columnCount) {
-            const tableContainer = document.getElementById('tableContainer');
-            const tableBody = document.getElementById('tableBody');
+        function displayPattern(title, pattern, columnCount) {
+            const tablesContainer = document.getElementById('tablesContainer');
+            
+            // 創建表格包裝器
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            
+            // 添加標題
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'table-title';
+            titleDiv.textContent = title;
+            wrapper.appendChild(titleDiv);
+            
+            // 創建表格
+            const table = document.createElement('table');
+            const tbody = document.createElement('tbody');
             
             const totalNumbers = pattern.length;
             const totalRows = Math.ceil(totalNumbers / columnCount);
             
             // 生成表格內容
-            tableBody.innerHTML = '';
             for (let row = 0; row < totalRows; row++) {
                 const tr = document.createElement('tr');
                 for (let col = 0; col < columnCount; col++) {
@@ -216,10 +250,12 @@
                     }
                     tr.appendChild(td);
                 }
-                tableBody.appendChild(tr);
+                tbody.appendChild(tr);
             }
             
-            tableContainer.style.display = 'block';
+            table.appendChild(tbody);
+            wrapper.appendChild(table);
+            tablesContainer.appendChild(wrapper);
         }
         
         function showError(message) {
@@ -232,12 +268,12 @@
             document.getElementById('jsonInput').value = '';
             document.getElementById('columnCount').value = '6';
             document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('tableContainer').style.display = 'none';
+            document.getElementById('tablesContainer').innerHTML = '';
         }
         
         // 載入範例資料
         window.onload = function() {
-            const exampleJson = '{"msgid":"eResultRecall","status_code":"kSuccess","result":{"module_id":"BS","credit":"0","rng":[6,10,85,168,115,13,94],"strip_index":0,"external_multiplier":1,"full_symbol_pattern":[200,13,12,6,11,200,30,11,2,13,5,4,4,100,100,100,14,4,4,100,100,3,11,14,4,13,100,100,100,14,14,13,30,100,100,14]},"player_cent":"1099960","next_module":"BS","cur_module_play_times":1,"cur_module_total_times":1}';
+            const exampleJson = '{"msgid":"eResultRecall","status_code":"kSuccess","result":{"module_id":"BS","credit":"10","rng":[53,164,172,63,5,40,34],"win_line_group":[{"win_line_type":"kCommon","line_no":255,"symbol_id":6,"pos":[3,11,25,36],"credit":10,"multiplier":1,"credit_long":"10"}],"sub_result":[{"sub_game_id":0,"credit":"0","golden_info":{"layouts":[{"positions":[0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,5,1,0,0,0,5,5,5,0,0,0,5,1,1,0,0,0,5,5,5,0]}]}}],"strip_index":0,"external_multiplier":2,"full_symbol_pattern":[200,15,15,6,11,200,5,6,12,2,11,11,13,100,100,100,14,2,6,100,100,100,100,2,14,100,100,11,14,14,14,12,6,100,100,14],"total_star_times":[{"times":[200,15,15,11,11,200,4,11,4,2,11,11,5,5,12,100,14,2,13,5,100,100,100,2,14,12,100,11,14,14,14,12,100,100,100,14]}],"golden_info":{"layouts":[{"positions":[0,0,0,0,0,0,0,1,1,1,0,0,0,5,5,5,1,0,0,5,5,5,5,0,0,5,5,1,1,0,0,0,0,5,5,0]}]}},"player_cent":"1099840","next_module":"BS","cur_module_play_times":1,"cur_module_total_times":1}';
             document.getElementById('jsonInput').value = exampleJson;
         };
     </script>
