@@ -15,7 +15,7 @@
         .container {
             display: flex;
             gap: 20px;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
@@ -36,6 +36,7 @@
             overflow-y: auto;
         }
         
+        
         .table-wrapper {
             margin-bottom: 30px;
         }
@@ -49,6 +50,43 @@
             font-size: 14px;
             font-weight: bold;
             color: #555;
+            height: 20px;
+        }
+        
+        .comparison-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: flex-start;
+        }
+        
+        .comparison-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .comparison-item {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .comparison-item .table-wrapper {
+            margin-bottom: 0;
+        }
+        
+        .comparison-item .table-title {
+            height: 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .comparison-item table {
+            margin: 0;
+            width: 100%;
+        }
+        
+        .single-table-wrapper {
+            margin-bottom: 30px;
         }
         
         h1 {
@@ -161,7 +199,7 @@
         </div>
         
         <div class="right-panel">
-            <div id="tablesContainer"></div>
+            <div id="comparisonTablesContainer"></div>
         </div>
     </div>
 
@@ -170,11 +208,10 @@
             const jsonInput = document.getElementById('jsonInput').value.trim();
             const columnCount = parseInt(document.getElementById('columnCount').value);
             const errorMessage = document.getElementById('errorMessage');
-            const tablesContainer = document.getElementById('tablesContainer');
             
             // 清除之前的錯誤訊息和表格
             errorMessage.style.display = 'none';
-            tablesContainer.innerHTML = '';
+            document.getElementById('comparisonTablesContainer').innerHTML = '';
             
             if (!jsonInput) {
                 showError('請輸入 JSON 字串');
@@ -194,15 +231,42 @@
                     return;
                 }
                 
-                // 顯示第一個表格：full_symbol_pattern
+                // 在右側欄垂直排列所有對照組
+                // 第一行：full_symbol_pattern | golden_info.layouts[0].positions
                 const pattern = jsonData.result.full_symbol_pattern;
-                displayPattern('full_symbol_pattern', pattern, columnCount);
+                const mainPositions = jsonData.result.golden_info && 
+                                    jsonData.result.golden_info.layouts && 
+                                    Array.isArray(jsonData.result.golden_info.layouts) && 
+                                    jsonData.result.golden_info.layouts.length > 0 &&
+                                    jsonData.result.golden_info.layouts[0].positions ?
+                                    jsonData.result.golden_info.layouts[0].positions : null;
+                
+                displayComparisonGroup('comparisonTablesContainer', 'full_symbol_pattern', pattern, 'golden_info.layouts[0].positions', mainPositions, columnCount);
 
-                // 顯示後續表格：total_star_times
+                // 後續行：total_star_times[N] | sub_result[N].golden_info.layouts[0].positions
                 if (jsonData.result.total_star_times && Array.isArray(jsonData.result.total_star_times)) {
                     jsonData.result.total_star_times.forEach((item, index) => {
                         if (item.times && Array.isArray(item.times)) {
-                            displayPattern(`total_star_times[${index}]`, item.times, columnCount);
+                            // 查找對應的 sub_result[index]
+                            const subResult = jsonData.result.sub_result && 
+                                            Array.isArray(jsonData.result.sub_result) && 
+                                            jsonData.result.sub_result[index] ?
+                                            jsonData.result.sub_result[index] : null;
+                            
+                            const subPositions = subResult &&
+                                                subResult.golden_info &&
+                                                subResult.golden_info.layouts &&
+                                                Array.isArray(subResult.golden_info.layouts) &&
+                                                subResult.golden_info.layouts.length > 0 &&
+                                                subResult.golden_info.layouts[0].positions ?
+                                                subResult.golden_info.layouts[0].positions : null;
+                            
+                            displayComparisonGroup('comparisonTablesContainer', 
+                                                 `total_star_times[${index}]`, 
+                                                 item.times, 
+                                                 `sub_result[${index}].golden_info.layouts[0].positions`, 
+                                                 subPositions, 
+                                                 columnCount);
                         }
                     });
                 }
@@ -212,9 +276,33 @@
             }
         }
         
-        function displayPattern(title, pattern, columnCount) {
-            const tablesContainer = document.getElementById('tablesContainer');
+        function displayComparisonGroup(containerId, leftTitle, leftPattern, rightTitle, rightPattern, columnCount) {
+            const tablesContainer = document.getElementById(containerId);
             
+            // 創建對照組容器
+            const comparisonGroup = document.createElement('div');
+            comparisonGroup.className = 'comparison-group';
+            
+            // 左側表格
+            const leftItem = document.createElement('div');
+            leftItem.className = 'comparison-item';
+            const leftWrapper = createTableWrapper(leftTitle, leftPattern, columnCount);
+            leftItem.appendChild(leftWrapper);
+            comparisonGroup.appendChild(leftItem);
+            
+            // 右側表格（如果存在）
+            if (rightPattern && Array.isArray(rightPattern)) {
+                const rightItem = document.createElement('div');
+                rightItem.className = 'comparison-item';
+                const rightWrapper = createTableWrapper(rightTitle, rightPattern, columnCount);
+                rightItem.appendChild(rightWrapper);
+                comparisonGroup.appendChild(rightItem);
+            }
+            
+            tablesContainer.appendChild(comparisonGroup);
+        }
+        
+        function createTableWrapper(title, pattern, columnCount) {
             // 創建表格包裝器
             const wrapper = document.createElement('div');
             wrapper.className = 'table-wrapper';
@@ -255,8 +343,9 @@
             
             table.appendChild(tbody);
             wrapper.appendChild(table);
-            tablesContainer.appendChild(wrapper);
+            return wrapper;
         }
+        
         
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
@@ -268,7 +357,7 @@
             document.getElementById('jsonInput').value = '';
             document.getElementById('columnCount').value = '6';
             document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('tablesContainer').innerHTML = '';
+            document.getElementById('comparisonTablesContainer').innerHTML = '';
         }
         
         // 載入範例資料
